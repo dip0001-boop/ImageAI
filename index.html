@@ -1,25 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>imageAI</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<h1>imageAI</h1>
+<div class="app">
 
-<div id="chat"></div>
+    <!-- Sidebar -->
+    <aside class="sidebar">
 
-<div class="input-area">
-    <input 
-        id="prompt"
-        placeholder="Describe the image you want..."
-    >
+        <div class="logo">
+            imageAI
+        </div>
 
-    <button onclick="generate()">
-        Create Image
-    </button>
+        <button id="newChat">
+            + New Chat
+        </button>
+
+
+        <div class="history">
+
+            <h3>Chats</h3>
+
+            <div id="chatList">
+                <p class="empty">
+                    No chats yet
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="sidebar-bottom">
+
+            <button id="settings">
+                Settings
+            </button>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- Main Area -->
+    <main class="main">
+
+
+        <header class="topbar">
+
+            <h2 id="chatTitle">
+                New Chat
+            </h2>
+
+        </header>
+
+
+
+        <div id="chat">
+
+            <div class="welcome">
+
+                <h1>
+                    Create anything with imageAI
+                </h1>
+
+                <p>
+                    Describe an image and AI will create it.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="input-area">
+
+            <input
+                id="prompt"
+                type="text"
+                placeholder="Describe the image you want..."
+            >
+
+
+            <button id="generate">
+                Generate
+            </button>
+
+        </div>
+
+
+    </main>
+
+
 </div>
 
 
