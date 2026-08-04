@@ -30,7 +30,6 @@ function renderHistory() {
 
     chatList.innerHTML = "";
 
-
     if (chats.length === 0) {
 
         chatList.innerHTML =
@@ -65,7 +64,6 @@ function renderHistory() {
 
 
 
-
 function createChat() {
 
     const chat = {
@@ -94,7 +92,6 @@ function createChat() {
 
 
 
-
 function clearChat() {
 
     chatBox.innerHTML = `
@@ -109,16 +106,13 @@ function clearChat() {
 
     `;
 
-
     chatTitle.textContent="New Chat";
 
 }
 
 
 
-
 function openChat(id) {
-
 
     currentChat=id;
 
@@ -127,7 +121,7 @@ function openChat(id) {
     chats.find(c=>c.id===id);
 
 
-    if(!chat)return;
+    if(!chat) return;
 
 
     chatTitle.textContent =
@@ -153,23 +147,17 @@ function openChat(id) {
 
 function addMessage(content,type) {
 
-
     const div=document.createElement("div");
-
 
     div.className =
     `message ${type}`;
 
-
     div.innerHTML=content;
-
 
     chatBox.appendChild(div);
 
-
     chatBox.scrollTop =
     chatBox.scrollHeight;
-
 
     return div;
 
@@ -179,7 +167,6 @@ function addMessage(content,type) {
 
 
 function saveMessage(content,type) {
-
 
     const chat =
     chats.find(c=>c.id===currentChat);
@@ -206,21 +193,17 @@ function saveMessage(content,type) {
 
 function updateTitle(prompt){
 
-
     const chat =
     chats.find(c=>c.id===currentChat);
 
 
     if(chat.title==="New Chat") {
 
-
         chat.title =
         prompt.substring(0,30);
 
-
         chatTitle.textContent =
         chat.title;
-
 
         saveChats();
 
@@ -235,7 +218,6 @@ function updateTitle(prompt){
 
 
 async function generateImage(){
-
 
     const prompt =
     promptInput.value.trim();
@@ -275,17 +257,17 @@ async function generateImage(){
 
     const loading =
     addMessage(
-        `
-        <span class="creating">
-        Creating image<span>.</span><span>.</span><span>.</span>
-        </span>
-        `,
-        "ai"
-    );
+`
+<span class="creating">
+Creating image<span>.</span><span>.</span><span>.</span>
+</span>
+`,
+"ai"
+);
 
 
 
-    const startTime =
+    const start =
     Date.now();
 
 
@@ -327,19 +309,10 @@ async function generateImage(){
 
         if(data.error){
 
-
-            const error =
             addMessage(
                 data.error,
                 "ai"
             );
-
-
-            saveMessage(
-                data.error,
-                "ai"
-            );
-
 
             return;
 
@@ -356,12 +329,10 @@ async function generateImage(){
 
         if(!image){
 
-
             addMessage(
-                "No image was returned.",
+                "No image returned.",
                 "ai"
             );
-
 
             return;
 
@@ -370,27 +341,41 @@ async function generateImage(){
 
 
         const seconds =
-        ((Date.now()-startTime)/1000)
+        ((Date.now()-start)/1000)
         .toFixed(1);
 
 
 
         const result = `
 
-        <p>
-        Here is your image:
-        </p>
+<p>
+Here is your image:
+</p>
 
-        <img 
-        src="${image}"
-        class="generated-image"
-        >
 
-        <small>
-        Generated in ${seconds}s
-        </small>
+<img 
+src="${image}"
+class="generated-image"
+>
 
-        `;
+
+<br>
+
+
+<a 
+href="${image}"
+download="imageAI-generated-image.jpg"
+class="download-button"
+>
+Download Image
+</a>
+
+
+<small>
+Generated in ${seconds}s
+</small>
+
+`;
 
 
 
@@ -412,34 +397,19 @@ async function generateImage(){
 
     catch(error){
 
-
         loading.remove();
 
 
-        const msg =
-        "Image generation failed: "
-        + error.message;
-
-
         addMessage(
-            msg,
+            "Image generation failed: "
+            + error.message,
             "ai"
         );
-
-
-        saveMessage(
-            msg,
-            "ai"
-        );
-
-
-        console.error(error);
 
     }
 
 
 }
-
 
 
 
