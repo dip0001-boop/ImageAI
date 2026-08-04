@@ -150,3 +150,25 @@ app.listen(PORT,()=>{
     );
 
 });
+
+app.get("/test-flux", async (req, res) => {
+
+    try {
+
+        const response = await fetch("https://api.bfl.ml");
+
+        res.json({
+            status: "reachable",
+            code: response.status
+        });
+
+    } catch(error) {
+
+        res.json({
+            status: "failed",
+            error: error.message
+        });
+
+    }
+
+});
