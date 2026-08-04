@@ -7,7 +7,9 @@ const generateBtn = document.getElementById("generate");
 const chatTitle = document.getElementById("chatTitle");
 
 
-let chats = JSON.parse(localStorage.getItem("imageAI_chats")) || [];
+let chats = JSON.parse(
+    localStorage.getItem("imageAI_chats")
+) || [];
 
 let currentChat = null;
 
@@ -32,7 +34,7 @@ function renderHistory() {
     if (chats.length === 0) {
 
         chatList.innerHTML =
-            `<p class="empty">No chats yet</p>`;
+        `<p class="empty">No chats yet</p>`;
 
         return;
 
@@ -40,7 +42,6 @@ function renderHistory() {
 
 
     chats.forEach(chat => {
-
 
         const item = document.createElement("div");
 
@@ -58,35 +59,29 @@ function renderHistory() {
 
         chatList.appendChild(item);
 
-
     });
-
 
 }
 
 
 
+
 function createChat() {
 
+    const chat = {
 
-    const id = Date.now();
+        id: Date.now(),
 
+        title:"New Chat",
 
-    const newChat = {
-
-        id,
-
-        title: "New Chat",
-
-        messages: []
+        messages:[]
 
     };
 
 
-    chats.unshift(newChat);
+    chats.unshift(chat);
 
-
-    currentChat = id;
+    currentChat = chat.id;
 
 
     saveChats();
@@ -95,102 +90,102 @@ function createChat() {
 
     clearChat();
 
-
 }
+
 
 
 
 function clearChat() {
 
-
     chatBox.innerHTML = `
 
-        <div class="welcome">
+    <div class="welcome">
 
-            <h1>Create anything with imageAI</h1>
+        <h1>Create anything with imageAI</h1>
 
-            <p>Describe an image and AI will create it.</p>
+        <p>Describe an image and AI will create it.</p>
 
-        </div>
+    </div>
 
     `;
 
 
-    chatTitle.textContent = "New Chat";
+    chatTitle.textContent="New Chat";
 
 }
+
 
 
 
 function openChat(id) {
 
 
-    currentChat = id;
+    currentChat=id;
 
 
-    const chat = chats.find(
-        c => c.id === id
-    );
+    const chat =
+    chats.find(c=>c.id===id);
 
 
-    if (!chat) return;
+    if(!chat)return;
 
 
-    chatTitle.textContent = chat.title;
+    chatTitle.textContent =
+    chat.title;
 
 
-    chatBox.innerHTML = "";
+    chatBox.innerHTML="";
 
 
-    chat.messages.forEach(message => {
-
+    chat.messages.forEach(msg=>{
 
         addMessage(
-            message.content,
-            message.type
+            msg.content,
+            msg.type
         );
 
-
     });
-
 
 }
 
 
 
-function addMessage(content, type) {
+
+function addMessage(content,type) {
 
 
-    const div = document.createElement("div");
+    const div=document.createElement("div");
 
 
     div.className =
-        `message ${type}`;
+    `message ${type}`;
 
 
-    div.innerHTML = content;
+    div.innerHTML=content;
 
 
     chatBox.appendChild(div);
 
 
     chatBox.scrollTop =
-        chatBox.scrollHeight;
+    chatBox.scrollHeight;
 
+
+    return div;
 
 }
 
 
 
-function saveMessage(content, type) {
+
+function saveMessage(content,type) {
 
 
-    const chat = chats.find(
-        c => c.id === currentChat
-    );
+    const chat =
+    chats.find(c=>c.id===currentChat);
 
 
-    if (!chat) return;
+    if(!chat)return;
 
 
     chat.messages.push({
@@ -204,24 +199,53 @@ function saveMessage(content, type) {
 
     saveChats();
 
+}
+
+
+
+
+function updateTitle(prompt){
+
+
+    const chat =
+    chats.find(c=>c.id===currentChat);
+
+
+    if(chat.title==="New Chat") {
+
+
+        chat.title =
+        prompt.substring(0,30);
+
+
+        chatTitle.textContent =
+        chat.title;
+
+
+        saveChats();
+
+        renderHistory();
+
+    }
 
 }
 
 
 
 
-async function generateImage() {
+
+async function generateImage(){
 
 
     const prompt =
-        promptInput.value.trim();
+    promptInput.value.trim();
 
 
-    if (!prompt) return;
+    if(!prompt)return;
 
 
 
-    if (!currentChat) {
+    if(!currentChat){
 
         createChat();
 
@@ -229,24 +253,7 @@ async function generateImage() {
 
 
 
-    const chat =
-        chats.find(
-            c => c.id === currentChat
-        );
-
-
-
-    if (chat.title === "New Chat") {
-
-        chat.title =
-            prompt.substring(0, 25);
-
-        chatTitle.textContent =
-            chat.title;
-
-        renderHistory();
-
-    }
+    updateTitle(prompt);
 
 
 
@@ -262,14 +269,24 @@ async function generateImage() {
     );
 
 
-    promptInput.value = "";
+    promptInput.value="";
 
 
 
+    const loading =
     addMessage(
-        "Creating image...",
+        `
+        <span class="creating">
+        Creating image<span>.</span><span>.</span><span>.</span>
+        </span>
+        `,
         "ai"
     );
+
+
+
+    const startTime =
+    Date.now();
 
 
 
@@ -277,37 +294,52 @@ async function generateImage() {
 
 
         const response =
-            await fetch("/generate", {
+        await fetch("/generate",{
 
-                method:"POST",
+            method:"POST",
 
-                headers:{
-                    "Content-Type":
-                    "application/json"
-                },
+            headers:{
 
-                body:JSON.stringify({
+                "Content-Type":
+                "application/json"
 
-                    prompt
+            },
 
-                })
 
-            });
+            body:JSON.stringify({
+
+                prompt
+
+            })
+
+        });
 
 
 
         const data =
-            await response.json();
+        await response.json();
 
 
 
-        if (data.error) {
+        loading.remove();
 
 
+
+        if(data.error){
+
+
+            const error =
             addMessage(
                 data.error,
                 "ai"
             );
+
+
+            saveMessage(
+                data.error,
+                "ai"
+            );
+
 
             return;
 
@@ -316,13 +348,13 @@ async function generateImage() {
 
 
         const image =
-            data.result?.sample ||
-            data.image ||
-            data.url;
+        data.image ||
+        data.url ||
+        data.result?.sample;
 
 
 
-        if (!image) {
+        if(!image){
 
 
             addMessage(
@@ -337,24 +369,39 @@ async function generateImage() {
 
 
 
-        const html = `
+        const seconds =
+        ((Date.now()-startTime)/1000)
+        .toFixed(1);
 
-            <p>Generated image:</p>
 
-            <img src="${image}">
+
+        const result = `
+
+        <p>
+        Here is your image:
+        </p>
+
+        <img 
+        src="${image}"
+        class="generated-image"
+        >
+
+        <small>
+        Generated in ${seconds}s
+        </small>
 
         `;
 
 
 
         addMessage(
-            html,
+            result,
             "ai"
         );
 
 
         saveMessage(
-            html,
+            result,
             "ai"
         );
 
@@ -362,17 +409,31 @@ async function generateImage() {
 
     }
 
+
     catch(error){
 
 
+        loading.remove();
+
+
+        const msg =
+        "Image generation failed: "
+        + error.message;
+
+
         addMessage(
-            "Image generation failed.",
+            msg,
+            "ai"
+        );
+
+
+        saveMessage(
+            msg,
             "ai"
         );
 
 
         console.error(error);
-
 
     }
 
@@ -382,28 +443,26 @@ async function generateImage() {
 
 
 
-
 newChatBtn.onclick =
-    createChat;
+createChat;
 
 
 generateBtn.onclick =
-    generateImage;
+generateImage;
 
 
 
 promptInput.addEventListener(
-    "keydown",
-    e => {
+"keydown",
+e=>{
 
-        if(e.key === "Enter"){
+    if(e.key==="Enter"){
 
-            generateImage();
-
-        }
+        generateImage();
 
     }
-);
+
+});
 
 
 
