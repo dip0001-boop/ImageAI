@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>imageAI</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -10,14 +11,16 @@
 
 <div id="chat"></div>
 
-<input 
-    id="prompt"
-    placeholder="Describe the image you want..."
->
+<div class="input-area">
+    <input 
+        id="prompt"
+        placeholder="Describe the image you want..."
+    >
 
-<button onclick="generate()">
-    Create Image
-</button>
+    <button onclick="generate()">
+        Create Image
+    </button>
+</div>
 
 
 <script src="script.js"></script>
