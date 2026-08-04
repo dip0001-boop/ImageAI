@@ -1,31 +1,269 @@
-const chat = document.getElementById("chat");
+const chatBox = document.getElementById("chat");
+const chatList = document.getElementById("chatList");
 const promptInput = document.getElementById("prompt");
+
+const newChatBtn = document.getElementById("newChat");
+const generateBtn = document.getElementById("generate");
+const chatTitle = document.getElementById("chatTitle");
+
+
+let chats = JSON.parse(localStorage.getItem("imageAI_chats")) || [];
+
+let currentChat = null;
+
+
+
+function saveChats() {
+
+    localStorage.setItem(
+        "imageAI_chats",
+        JSON.stringify(chats)
+    );
+
+}
+
+
+
+function renderHistory() {
+
+    chatList.innerHTML = "";
+
+
+    if (chats.length === 0) {
+
+        chatList.innerHTML =
+            `<p class="empty">No chats yet</p>`;
+
+        return;
+
+    }
+
+
+    chats.forEach(chat => {
+
+
+        const item = document.createElement("div");
+
+        item.className = "chat-item";
+
+        item.textContent = chat.title;
+
+
+        item.onclick = () => {
+
+            openChat(chat.id);
+
+        };
+
+
+        chatList.appendChild(item);
+
+
+    });
+
+
+}
+
+
+
+function createChat() {
+
+
+    const id = Date.now();
+
+
+    const newChat = {
+
+        id,
+
+        title: "New Chat",
+
+        messages: []
+
+    };
+
+
+    chats.unshift(newChat);
+
+
+    currentChat = id;
+
+
+    saveChats();
+
+    renderHistory();
+
+    clearChat();
+
+
+}
+
+
+
+function clearChat() {
+
+
+    chatBox.innerHTML = `
+
+        <div class="welcome">
+
+            <h1>Create anything with imageAI</h1>
+
+            <p>Describe an image and AI will create it.</p>
+
+        </div>
+
+    `;
+
+
+    chatTitle.textContent = "New Chat";
+
+}
+
+
+
+function openChat(id) {
+
+
+    currentChat = id;
+
+
+    const chat = chats.find(
+        c => c.id === id
+    );
+
+
+    if (!chat) return;
+
+
+    chatTitle.textContent = chat.title;
+
+
+    chatBox.innerHTML = "";
+
+
+    chat.messages.forEach(message => {
+
+
+        addMessage(
+            message.content,
+            message.type
+        );
+
+
+    });
+
+
+}
+
 
 
 function addMessage(content, type) {
 
+
     const div = document.createElement("div");
 
-    div.className = `message ${type}`;
+
+    div.className =
+        `message ${type}`;
+
 
     div.innerHTML = content;
 
-    chat.appendChild(div);
 
-    chat.scrollTop = chat.scrollHeight;
+    chatBox.appendChild(div);
+
+
+    chatBox.scrollTop =
+        chatBox.scrollHeight;
+
+
 }
 
 
-async function generate() {
 
-    const prompt = promptInput.value.trim();
+function saveMessage(content, type) {
+
+
+    const chat = chats.find(
+        c => c.id === currentChat
+    );
+
+
+    if (!chat) return;
+
+
+    chat.messages.push({
+
+        content,
+
+        type
+
+    });
+
+
+    saveChats();
+
+
+}
+
+
+
+
+async function generateImage() {
+
+
+    const prompt =
+        promptInput.value.trim();
+
 
     if (!prompt) return;
 
 
-    addMessage(prompt, "user");
+
+    if (!currentChat) {
+
+        createChat();
+
+    }
+
+
+
+    const chat =
+        chats.find(
+            c => c.id === currentChat
+        );
+
+
+
+    if (chat.title === "New Chat") {
+
+        chat.title =
+            prompt.substring(0, 25);
+
+        chatTitle.textContent =
+            chat.title;
+
+        renderHistory();
+
+    }
+
+
+
+    addMessage(
+        prompt,
+        "user"
+    );
+
+
+    saveMessage(
+        prompt,
+        "user"
+    );
+
 
     promptInput.value = "";
+
 
 
     addMessage(
@@ -34,27 +272,37 @@ async function generate() {
     );
 
 
+
     try {
 
-        const response = await fetch("/generate", {
 
-            method: "POST",
+        const response =
+            await fetch("/generate", {
 
-            headers: {
-                "Content-Type": "application/json"
-            },
+                method:"POST",
 
-            body: JSON.stringify({
-                prompt
-            })
+                headers:{
+                    "Content-Type":
+                    "application/json"
+                },
 
-        });
+                body:JSON.stringify({
+
+                    prompt
+
+                })
+
+            });
 
 
-        const data = await response.json();
+
+        const data =
+            await response.json();
+
 
 
         if (data.error) {
+
 
             addMessage(
                 data.error,
@@ -62,7 +310,9 @@ async function generate() {
             );
 
             return;
+
         }
+
 
 
         const image =
@@ -71,45 +321,90 @@ async function generate() {
             data.url;
 
 
-        if (image) {
+
+        if (!image) {
+
 
             addMessage(
-                `
-                <p>Generated image:</p>
-                <img src="${image}">
-                `,
+                "No image was returned.",
                 "ai"
             );
 
-        } else {
 
-            addMessage(
-                "Image generation started but no image URL was returned.",
-                "ai"
-            );
+            return;
 
         }
 
 
-    } catch (err) {
+
+        const html = `
+
+            <p>Generated image:</p>
+
+            <img src="${image}">
+
+        `;
+
+
 
         addMessage(
-            "Something went wrong.",
+            html,
             "ai"
         );
 
-        console.error(err);
+
+        saveMessage(
+            html,
+            "ai"
+        );
+
+
+
     }
+
+    catch(error){
+
+
+        addMessage(
+            "Image generation failed.",
+            "ai"
+        );
+
+
+        console.error(error);
+
+
+    }
+
+
 }
+
+
+
+
+
+newChatBtn.onclick =
+    createChat;
+
+
+generateBtn.onclick =
+    generateImage;
+
 
 
 promptInput.addEventListener(
     "keydown",
     e => {
 
-        if (e.key === "Enter") {
-            generate();
+        if(e.key === "Enter"){
+
+            generateImage();
+
         }
 
     }
 );
+
+
+
+renderHistory();
