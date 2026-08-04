@@ -10,29 +10,32 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("."));
 
-
 const PORT = process.env.PORT || 3000;
 
 const FLUX_API_KEY = process.env.FLUX_API_KEY;
 
 
-
-function sleep(ms) {
-
-    return new Promise(resolve =>
-        setTimeout(resolve, ms)
+function timeout(ms) {
+    return new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out")), ms)
     );
+}
+
+
+async function fetchWithTimeout(url, options, ms = 60000) {
+
+    return Promise.race([
+        fetch(url, options),
+        timeout(ms)
+    ]);
 
 }
 
 
 
-
 app.post("/generate", async (req, res) => {
 
-
     try {
-
 
         const { prompt } = req.body;
 
@@ -40,206 +43,86 @@ app.post("/generate", async (req, res) => {
         if (!prompt) {
 
             return res.status(400).json({
-
-                error: "Missing image prompt"
-
+                error: "No prompt provided"
             });
 
         }
-
 
 
         if (!FLUX_API_KEY) {
 
             return res.status(500).json({
-
-                error: "FLUX_API_KEY is missing"
-
+                error: "FLUX_API_KEY missing"
             });
 
         }
 
 
 
+        console.log("Sending request to FLUX...");
 
-        // Create image request
 
-        const create = await fetch(
+        const response = await fetchWithTimeout(
+
             "https://api.bfl.ml/v1/flux-pro-1.1",
+
             {
 
-                method: "POST",
+                method:"POST",
 
-                headers: {
+                headers:{
 
-                    "Content-Type": "application/json",
+                    "Content-Type":"application/json",
 
-                    "X-Key": FLUX_API_KEY
+                    "X-Key":FLUX_API_KEY
 
                 },
 
+                body:JSON.stringify({
 
-                body: JSON.stringify({
+                    prompt,
 
-                    prompt: prompt,
+                    width:1024,
 
-                    width: 1024,
-
-                    height: 1024,
-
-                    output_format: "jpeg"
+                    height:1024
 
                 })
 
-            }
+            },
+
+            60000
+
         );
 
 
 
-        const createData =
-            await create.json();
+        const data = await response.json();
+
+
+        console.log("FLUX RESPONSE:", data);
 
 
 
-        console.log(
-            "FLUX CREATE:",
-            createData
-        );
-
-
-
-        if (!createData.id) {
-
+        if(!response.ok){
 
             return res.status(500).json({
 
                 error:
-                "FLUX did not create a job: "
-                + JSON.stringify(createData)
+                JSON.stringify(data)
 
             });
 
-
         }
 
 
 
-        const jobId =
-            createData.id;
-
-
-
-        let result = null;
-
-
-
-        // Check status
-
-        for (
-            let i = 0;
-            i < 60;
-            i++
-        ) {
-
-
-            await sleep(2000);
-
-
-
-            const status =
-            await fetch(
-
-                `https://api.bfl.ml/v1/get_result?id=${jobId}`,
-
-                {
-
-                    headers: {
-
-                        "X-Key":
-                        FLUX_API_KEY
-
-                    }
-
-                }
-
-            );
-
-
-
-            result =
-            await status.json();
-
-
-
-            console.log(
-                "FLUX STATUS:",
-                result.status
-            );
-
-
-
-            if (
-                result.status === "Ready"
-            ) {
-
-                break;
-
-            }
-
-
-
-            if (
-                result.status === "Failed"
-            ) {
-
-                return res.status(500).json({
-
-                    error:
-                    "FLUX generation failed"
-
-                });
-
-            }
-
-
-        }
-
-
-
-
-        if (
-            !result ||
-            !result.result ||
-            !result.result.sample
-        ) {
-
-
-            return res.status(500).json({
-
-                error:
-                "FLUX timed out"
-
-            });
-
-
-        }
-
-
-
-
-        res.json({
-
-            image:
-            result.result.sample
-
-        });
+        res.json(data);
 
 
 
     }
 
-    catch(error) {
-
+    catch(error){
 
         console.error(
             "SERVER ERROR:",
@@ -249,23 +132,18 @@ app.post("/generate", async (req, res) => {
 
         res.status(500).json({
 
-            error:
-            error.message
+            error:error.message
 
         });
 
-
     }
-
 
 });
 
 
 
 
-
-
-app.listen(PORT, () => {
+app.listen(PORT,()=>{
 
     console.log(
         `imageAI running on port ${PORT}`
