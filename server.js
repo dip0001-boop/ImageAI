@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const { fal } = require("@fal-ai/serverless-client");
+const { fal } = require("@fal-ai/client");
 
 dotenv.config();
 
@@ -30,7 +30,6 @@ app.post("/generate", async (req, res) => {
 
         const { prompt } = req.body;
 
-
         if (!prompt) {
             return res.status(400).json({
                 error: "No prompt provided"
@@ -48,9 +47,7 @@ app.post("/generate", async (req, res) => {
                     prompt: prompt,
                     image_size: "square",
                     num_images: 1
-                },
-
-                logs: true
+                }
             }
         );
 
@@ -58,37 +55,21 @@ app.post("/generate", async (req, res) => {
         console.log("Generation complete");
 
 
-        if (!result?.data?.images?.[0]?.url) {
-
-            return res.status(500).json({
-                error: "No image returned",
-                result
-            });
-
-        }
+        const image =
+            result.data.images[0].url;
 
 
         res.json({
-
-            image:
-            result.data.images[0].url
-
+            image
         });
 
 
-    }
-    catch(error) {
+    } catch(error) {
 
-        console.error(
-            "SERVER ERROR:",
-            error
-        );
-
+        console.error(error);
 
         res.status(500).json({
-
             error: error.message
-
         });
 
     }
@@ -97,9 +78,5 @@ app.post("/generate", async (req, res) => {
 
 
 app.listen(PORT, () => {
-
-    console.log(
-        `imageAI running on port ${PORT}`
-    );
-
+    console.log(`imageAI running on port ${PORT}`);
 });
