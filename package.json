@@ -1,15 +1,18 @@
 {
   "name": "imageai",
   "version": "1.0.0",
-  "description": "AI image creation chatbot powered by FLUX",
+  "description": "AI image generator using fal.ai",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^5.1.0",
+    "@fal-ai/serverless-client": "^0.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "node-fetch": "^3.3.2"
+    "express": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
