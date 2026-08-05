@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const { fal } = require("@fal-ai/serverless-client");
 
 dotenv.config();
 
@@ -12,12 +13,15 @@ app.use(express.static("."));
 
 const PORT = process.env.PORT || 3000;
 
-const API_KEY = process.env.FLUX_API_KEY;
+const FAL_KEY = process.env.FAL_KEY;
 
+if (!FAL_KEY) {
+    console.log("WARNING: Missing FAL_KEY");
+}
 
-const sleep = ms =>
-    new Promise(resolve => setTimeout(resolve, ms));
-
+fal.config({
+    credentials: FAL_KEY
+});
 
 
 app.post("/generate", async (req, res) => {
@@ -34,138 +38,46 @@ app.post("/generate", async (req, res) => {
         }
 
 
-        if (!API_KEY) {
-            return res.status(500).json({
-                error: "Missing FLUX_API_KEY"
-            });
-        }
+        console.log("Sending request to fal.ai...");
 
 
-
-        console.log("Sending request to BFL...");
-
-
-
-        const createResponse = await fetch(
-            "https://api.bfl.ai/v1/flux-2-klein-4b",
+        const result = await fal.subscribe(
+            "fal-ai/flux/schnell",
             {
-                method: "POST",
-
-                headers: {
-                    "accept": "application/json",
-                    "x-key": API_KEY,
-                    "Content-Type": "application/json"
+                input: {
+                    prompt: prompt,
+                    image_size: "square",
+                    num_images: 1
                 },
 
-                body: JSON.stringify({
-                    prompt,
-                    width: 1024,
-                    height: 1024
-                })
+                logs: true
             }
         );
 
 
-
-        const createData =
-            await createResponse.json();
+        console.log("Generation complete");
 
 
-
-        console.log("CREATE:", createData);
-
-
-
-        if (!createData.id || !createData.polling_url) {
+        if (!result?.data?.images?.[0]?.url) {
 
             return res.status(500).json({
-
-                error:
-                JSON.stringify(createData)
-
+                error: "No image returned",
+                result
             });
 
         }
-
-
-
-        let result;
-
-
-
-        for(let i = 0; i < 60; i++) {
-
-
-            await sleep(2000);
-
-
-
-            const poll =
-            await fetch(
-                createData.polling_url,
-                {
-                    headers:{
-                        "x-key": API_KEY
-                    }
-                }
-            );
-
-
-            result =
-            await poll.json();
-
-
-
-            console.log(
-                "STATUS:",
-                result.status
-            );
-
-
-
-            if(result.status === "Ready") {
-                break;
-            }
-
-
-            if(
-                result.status === "Error" ||
-                result.status === "Failed"
-            ){
-
-                return res.status(500).json({
-                    error:"FLUX generation failed"
-                });
-
-            }
-
-        }
-
-
-
-        if(!result?.result?.sample){
-
-            return res.status(500).json({
-
-                error:"No image returned"
-
-            });
-
-        }
-
 
 
         res.json({
 
             image:
-            result.result.sample
+            result.data.images[0].url
 
         });
 
 
-
     }
-    catch(error){
+    catch(error) {
 
         console.error(
             "SERVER ERROR:",
@@ -175,7 +87,7 @@ app.post("/generate", async (req, res) => {
 
         res.status(500).json({
 
-            error:error.message
+            error: error.message
 
         });
 
@@ -184,9 +96,7 @@ app.post("/generate", async (req, res) => {
 });
 
 
-
-
-app.listen(PORT, ()=>{
+app.listen(PORT, () => {
 
     console.log(
         `imageAI running on port ${PORT}`
